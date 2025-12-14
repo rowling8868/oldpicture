@@ -84,12 +84,52 @@
         const Minimize = (props) => (
             <IconBase {...props}><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></IconBase>
         );
-        const Volume2 = (props) => (
-            <IconBase {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></IconBase>
+        const Music = (props) => (
+            <IconBase {...props}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></IconBase>
         );
-        const VolumeX = (props) => (
-            <IconBase {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></IconBase>
+        const ChevronDown = (props) => (
+            <IconBase {...props}><polyline points="6 9 12 15 18 9"/></IconBase>
         );
+        const ChevronUp = (props) => (
+            <IconBase {...props}><polyline points="18 15 12 9 6 15"/></IconBase>
+        );
+
+        // --- YouTube 播放器組件 ---
+        const YouTubePlayer = () => {
+            const [isMinimized, setIsMinimized] = useState(false);
+
+            return (
+                <div className={`fixed bottom-4 right-4 z-50 transition-all duration-300 shadow-2xl rounded-lg overflow-hidden border border-gray-300 ${isMinimized ? 'w-64' : 'w-80 md:w-96'}`}>
+                    {/* 控制列 */}
+                    <div 
+                        className="bg-gray-800 text-white p-2 px-3 flex justify-between items-center cursor-pointer hover:bg-gray-700 transition-colors"
+                        onClick={() => setIsMinimized(!isMinimized)}
+                        title={isMinimized ? "點擊展開" : "點擊縮小"}
+                    >
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                            <Music size={16} className="text-green-400" />
+                            <span>{isMinimized ? "音樂播放器 (已縮小)" : "背景音樂：Super Mario"}</span>
+                        </div>
+                        <button className="focus:outline-none text-gray-400 hover:text-white">
+                            {isMinimized ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        </button>
+                    </div>
+
+                    {/* 影片容器 */}
+                    <div className={`bg-black transition-all duration-300 ${isMinimized ? 'h-0' : 'h-48 md:h-56'}`}>
+                        <iframe 
+                            width="100%" 
+                            height="100%" 
+                            src="https://www.youtube.com/embed/r34IHFI-29c" 
+                            title="YouTube video player" 
+                            frameBorder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                            allowFullScreen
+                        ></iframe>
+                    </div>
+                </div>
+            );
+        };
 
         // --- 主程式邏輯 ---
         const GuessWhoGame = () => {
@@ -183,47 +223,11 @@
             const [step, setStep] = useState(0);
             const [gameStatus, setGameStatus] = useState('start');
             const [isFullscreen, setIsFullscreen] = useState(false);
-            const [isMusicPlaying, setIsMusicPlaying] = useState(true); // 音樂預設開啟狀態
-            const audioRef = useRef(null);
-
+            
             const currentCelebrity = gameData[currentRound];
-
-            // --- 音樂功能 (改用 HTML5 Audio 以解決 YouTube 錯誤) ---
-            useEffect(() => {
-                // 使用 Internet Archive 的穩定 MP3 連結 (Erik Satie - Gymnopédie No.1)
-                audioRef.current = new Audio("https://ia800504.us.archive.org/33/items/ErikSatieGymnopedieNo1/ErikSatieGymnopedieNo1.mp3");
-                audioRef.current.loop = true;
-                audioRef.current.volume = 0.5;
-                
-                // 清理函數
-                return () => {
-                    if (audioRef.current) {
-                        audioRef.current.pause();
-                        audioRef.current = null;
-                    }
-                };
-            }, []);
-
-            const toggleMusic = () => {
-                if (!audioRef.current) return;
-                
-                if (isMusicPlaying) {
-                    audioRef.current.pause();
-                } else {
-                    audioRef.current.play().catch(e => console.log("Audio play error:", e));
-                }
-                setIsMusicPlaying(!isMusicPlaying);
-            };
 
             const handleStartGame = () => {
                 setGameStatus('playing');
-                // 使用者互動後，播放音樂
-                if (audioRef.current) {
-                    audioRef.current.play().catch(e => {
-                        console.log("Auto-play prevented:", e);
-                        setIsMusicPlaying(false); // 如果自動播放失敗，更新狀態為暫停
-                    });
-                }
             };
 
             // --- 全螢幕功能 ---
@@ -335,14 +339,7 @@
 
             // 音樂控制按鈕與全螢幕按鈕共用區塊
             const TopRightControls = ({ isDarkBg }) => (
-                <div className="absolute top-4 right-4 flex gap-2 z-50">
-                     <button 
-                        onClick={toggleMusic}
-                        className={`p-2 rounded-full transition shadow-sm backdrop-blur-sm ${isDarkBg ? 'bg-white/20 text-white hover:bg-white/40' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                        title={isMusicPlaying ? "關閉音樂" : "開啟音樂"}
-                    >
-                        {isMusicPlaying ? <Volume2 size={24} /> : <VolumeX size={24} />}
-                    </button>
+                <div className="absolute top-4 right-4 flex gap-2 z-40">
                     <button 
                         onClick={toggleFullScreen}
                         className={`p-2 rounded-full transition shadow-sm backdrop-blur-sm ${isDarkBg ? 'bg-white/20 text-white hover:bg-white/40' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
@@ -465,6 +462,7 @@
             return (
                 <React.Fragment>
                     {renderScreen()}
+                    <YouTubePlayer />
                 </React.Fragment>
             );
         };
